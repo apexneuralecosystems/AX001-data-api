@@ -5,9 +5,9 @@ import pandas as pd
 import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-SALES_FILE = Path(os.getenv("SALES_FILE_PATH", BASE_DIR / "data" / "sales_daily.csv"))
+SALES_FILE = Path(os.getenv("SALES_FILE_PATH", BASE_DIR / "data" / "raw_sales.csv"))
 INVENTORY_FILE = Path(
-    os.getenv("INVENTORY_FILE_PATH", BASE_DIR / "data" / "inventory_daily.csv")
+    os.getenv("INVENTORY_FILE_PATH", BASE_DIR / "data" / "raw_inventory.csv")
 )
 
 
@@ -25,13 +25,29 @@ def _normalize_for_json(df: pd.DataFrame) -> pd.DataFrame:
     return normalized_df.where(pd.notna(normalized_df), None)
 
 
+def _ensure_date_column(df: pd.DataFrame, candidate_columns: list[str]) -> pd.DataFrame:
+    if "date" in df.columns:
+        date_series = pd.to_datetime(df["date"], errors="coerce")
+    else:
+        source_column = next((column for column in candidate_columns if column in df.columns), None)
+        if source_column is None:
+            raise ValueError(
+                "Missing date source. Expected one of: "
+                + ", ".join(["date"] + candidate_columns)
+            )
+        date_series = pd.to_datetime(df[source_column], errors="coerce")
+
+    df["date"] = date_series.dt.strftime("%Y-%m-%d")
+    return df
+
+
 def load_sales():
     df = _load_dataframe(SALES_FILE)
-    df["date"] = df["date"].astype(str)
+    df = _ensure_date_column(df, ["transaction_datetime", "event_timestamp"])
     return _normalize_for_json(df)
 
 
 def load_inventory():
     df = _load_dataframe(INVENTORY_FILE)
-    df["date"] = df["date"].astype(str)
+    df = _ensure_date_column(df, ["event_timestamp", "transaction_datetime"])
     return _normalize_for_json(df)
