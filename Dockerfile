@@ -4,8 +4,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     APP_HOST=0.0.0.0 \
     APP_PORT=8888 \
-    SALES_FILE_PATH=/app/data/sales_daily.csv \
-    INVENTORY_FILE_PATH=/app/data/inventory_daily.csv
+    SALES_FILE_PATH=/app/data/raw_sales.csv \
+    INVENTORY_FILE_PATH=/app/data/raw_inventory.csv
 
 WORKDIR /app
 
