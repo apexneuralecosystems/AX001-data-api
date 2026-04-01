@@ -21,8 +21,12 @@ def _load_dataframe(file_path: Path) -> pd.DataFrame:
 
 def _normalize_for_json(df: pd.DataFrame) -> pd.DataFrame:
     # FastAPI/JSON cannot serialize NaN/Infinity values, so map them to null.
-    normalized_df = df.replace([np.inf, -np.inf], np.nan)
-    return normalized_df.where(pd.notna(normalized_df), None)
+    normalized_df = df.copy()
+    numeric_columns = normalized_df.select_dtypes(include=[np.number]).columns
+    normalized_df[numeric_columns] = normalized_df[numeric_columns].replace(
+        [np.inf, -np.inf], np.nan
+    )
+    return normalized_df.astype(object).where(pd.notna(normalized_df), None)
 
 
 def _ensure_date_column(df: pd.DataFrame, candidate_columns: list[str]) -> pd.DataFrame:
